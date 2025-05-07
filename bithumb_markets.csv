@@ -1,0 +1,391 @@
+market,korean_name,english_name
+KRW-BTC,비트코인,Bitcoin
+KRW-ETH,이더리움,Ethereum
+KRW-ETC,이더리움 클래식,Ethereum Classic
+KRW-XRP,엑스알피 [리플],XRP
+KRW-BCH,비트코인 캐시,Bitcoin Cash
+KRW-QTUM,퀀텀,Qtum
+KRW-EOS,이오스,EOS
+KRW-ICX,아이콘,ICON
+KRW-TRX,트론,TRON
+KRW-ELF,엘프,aelf
+KRW-KNC,카이버 네트워크,Kyber Network
+KRW-GLM,골렘,Golem
+KRW-ZIL,질리카,Zilliqa
+KRW-WAXP,왁스,WAXP
+KRW-POWR,파워렛저,Powerledger
+KRW-LRC,루프링,Loopring
+KRW-STEEM,스팀,Steem
+KRW-ZRX,제로엑스,0x
+KRW-SNT,스테이터스네트워크토큰,Status Network
+KRW-ADA,에이다,Cardano
+KRW-CTXC,코르텍스,Cortex
+KRW-BAT,베이직어텐션토큰,Basic Attention Token
+KRW-THETA,쎄타토큰,Theta Token
+KRW-CVC,시빅,Civic
+KRW-WAVES,웨이브,Waves
+KRW-LINK,체인링크,ChainLink
+KRW-ENJ,엔진코인,Enjin Coin
+KRW-VET,비체인,VeChainThor
+KRW-MTL,메탈,Metal
+KRW-IOST,이오스트,IOST
+KRW-AMO,아모코인,AMO Coin
+KRW-BSV,비트코인에스브이,BITCOINSV
+KRW-ORBS,오브스,Orbs
+KRW-TFUEL,쎄타퓨엘,TFUEL
+KRW-ANKR,앵커,Ankr Network
+KRW-MIX,믹스마블,MixMarvel Token
+KRW-CRO,크로노스,Cronos
+KRW-CHR,크로미아,Chromia
+KRW-MBL,무비블록,MovieBloc
+KRW-FCT2,피르마체인,Firmachain
+KRW-WOM,왐토큰,WOM Token
+KRW-BOA,보아,BOSAGORA
+KRW-MEV,미버스,MEVerse
+KRW-SXP,솔라,Solar
+KRW-COS,콘텐토스,Contentos
+KRW-EL,엘리시아,ELYSIA
+KRW-HIVE,하이브,Hive
+KRW-XPR,엑스피알 네트워크,XPR Network
+KRW-EGG,네스트리,Nestree
+KRW-BORA,보라,BORA
+KRW-ARPA,알파,ARPA
+KRW-CTC,크레딧코인,Creditcoin
+KRW-APM,에이피엠 코인,apM Coin
+KRW-CKB,너보스,Nervos Network
+KRW-AERGO,아르고,Aergo
+KRW-EVZ,이브이지,Electronic Vehicle Zone
+KRW-QTCON,퀴즈톡,Quiztok
+KRW-UNI,유니스왑,Uniswap
+KRW-YFI,연파이낸스,yearn.finance
+KRW-UMA,우마,UMA
+KRW-AAVE,에이브,Aave
+KRW-COMP,컴파운드,Compound
+KRW-BAL,밸런서,Balancer
+KRW-RSR,리저브라이트,Reserve Rights
+KRW-NMR,뉴메레르,Numeraire
+KRW-RLC,아이젝,iExec RLC
+KRW-UOS,울트라,Ultra
+KRW-SAND,샌드박스,The Sandbox
+KRW-STPT,에스티피,Standard Tokenization Protocol
+KRW-BEL,벨라프로토콜,Bella Protocol
+KRW-OBSR,옵저버,Observer
+KRW-POLA,폴라리스 쉐어,Polaris Share
+KRW-ADP,어댑터 토큰,Adappter Token
+KRW-DVI,디비전,Dvision Network
+KRW-GHX,게이머코인,Gamercoin
+KRW-CBK,코박토큰,Cobak Token
+KRW-MVC,마일벌스,MileVerse
+KRW-BLY,블로서리,Blocery
+KRW-GRT,더그래프,The Graph
+KRW-BIOT,바이오패스포트,BioPassport
+KRW-SNX,신세틱스,Synthetix Network Token
+KRW-SOFI,라이파이낸스,Rai Finance
+KRW-GRACY,그레이시,Gracy
+KRW-OXT,오키드,Orchid
+KRW-MAPO,맵프로토콜,MAP Protocol
+KRW-AQT,알파쿼크,Alpha Quark Token
+KRW-WIKEN,위드,Project WITH
+KRW-CTSI,카르테시,Cartesi
+KRW-MANA,디센트럴랜드,Decentraland
+KRW-LPT,라이브피어,Livepeer
+KRW-SUSHI,스시스왑,Sushiswap
+KRW-ASM,어셈블 에이아이,Assemble AI
+KRW-PUNDIX,펀디엑스,Pundi X
+KRW-CELR,셀러네트워크,Celer Network
+KRW-SLF,셀프 체인,Self Chain
+KRW-BFC,바이프로스트,Bifrost
+KRW-ALICE,마이네이버앨리스,MyNeighborAlice
+KRW-OGN,오리진프로토콜,Origin Protocol
+KRW-COTI,코티,COTI
+KRW-CAKE,팬케이크스왑,PancakeSwap
+KRW-BNT,뱅코르,Bancor
+KRW-XVS,비너스,Venus
+KRW-SWAP,트러스트스왑,TrustSwap
+KRW-CHZ,칠리즈,Chiliz
+KRW-AXS,엑시인피니티,Axie Infinity
+KRW-DAO,다오메이커,DAO Maker
+KRW-SIX,식스,SIX
+KRW-USDS,유에스디에스,USDS
+KRW-SHIB,시바이누,SHIBA INU
+KRW-POL,폴리곤 에코시스템 토큰,Polygon Ecosystem Token
+KRW-WOO,우네트워크,WOO Network
+KRW-ACH,알케미페이,Alchemy Pay
+KRW-XLM,스텔라루멘,Stellar Lumens
+KRW-ONT,온톨로지,Ontology
+KRW-META,메타디움,Metadium
+KRW-KAIA,카이아,Kaia
+KRW-ONG,온톨로지가스,Ontology Gas
+KRW-ALGO,알고랜드,Algorand
+KRW-JST,저스트,JUST
+KRW-XTZ,테조스,Tezos
+KRW-MLK,밀크,MiL.k
+KRW-DOT,폴카닷,Polkadot
+KRW-ATOM,코스모스,Cosmos
+KRW-TEMCO,템코,TEMCO
+KRW-DOGE,도지코인,Dogecoin
+KRW-KSM,쿠사마,Kusama
+KRW-CTK,셴투,Shentu
+KRW-BNB,비앤비,BNB
+KRW-NFT,에이피이앤에프티,APENFT
+KRW-SUN,썬,SUN
+KRW-XEC,이캐시,eCash
+KRW-SOL,솔라나,Solana
+KRW-EGLD,멀티버스엑스,MultiversX
+KRW-MASK,마스크네트워크,Mask Network
+KRW-C98,코인98,Coin98
+KRW-MED,메디블록,MediBloc
+KRW-1INCH,1인치,1inch
+KRW-CRV,커브,Curve DAO Token
+KRW-BOBA,보바토큰,Boba Network
+KRW-DYDX,디와이디엑스,DYDX
+KRW-MINA,미나,Mina
+KRW-FLOW,플로우,Flow
+KRW-JOE,트레이더 조,JOE
+KRW-GALA,갈라,Gala
+KRW-ENS,이더리움네임서비스,Ethereum Name Service
+KRW-BTT,비트토렌트,BitTorrent
+KRW-JASMY,재스미코인,JasmyCoin
+KRW-REQ,리퀘스트,Request
+KRW-CSPR,캐스퍼,Casper
+KRW-AVAX,아발란체,Avalanche
+KRW-TDROP,티드랍,ThetaDrop
+KRW-HBAR,헤데라,Hedera
+KRW-FANC,팬시,fanC
+KRW-NPT,네오핀,NEOPIN Token
+KRW-REI,레이,REI
+KRW-T,쓰레스홀드,Threshold
+KRW-MBX,마브렉스,Marblex
+KRW-GMT,스테픈,STEPN
+KRW-TAVA,알타바,ALTAVA
+KRW-D,달 오픈 네트워크,DAR Open Network
+KRW-APE,에이프코인,ApeCoin
+KRW-WNCG,랩트 나인 크로니클 골드,Wrapped NCG
+KRW-AL,아치루트,ArchLoot
+KRW-XCN,오닉스코인,Onyxcoin
+KRW-AZIT,아지트,Azit
+KRW-FLR,플레어,Flare
+KRW-SFP,세이프팔,Safepal
+KRW-FITFI,스텝앱,Step App
+KRW-STAT,스탯,STAT
+KRW-CRTS,크라토스,Cratos
+KRW-LBL,레이블 에이아이,Lable AI
+KRW-FLZ,펠라즈,Fellaz
+KRW-LM,레저메타,LeisureMeta
+KRW-GRND,슈퍼워크,Superwalk
+KRW-APT,앱토스,Aptos
+KRW-BLUR,블러,Blur
+KRW-WEMIX,위믹스,WEMIX
+KRW-OAS,오아시스,Oasys
+KRW-HOOK,훅트 프로토콜,Hooked Protocol
+KRW-LWA,루미웨이브,Lumiwave
+KRW-OP,옵티미즘,Optimism
+KRW-ROA,로아코어,ROA CORE
+KRW-GMX,지엠엑스,GMX
+KRW-STX,스택스,Stacks
+KRW-XPLA,엑스플라,XPLA
+KRW-AHT,아하토큰,AhaToken
+KRW-ARB,아비트럼,Arbitrum
+KRW-INJ,인젝티브,Injective
+KRW-HFT,해시플로우,Hashflow
+KRW-RPL,로켓풀,Rocket Pool
+KRW-IMX,이뮤터블엑스,Immutable X
+KRW-CFX,콘플럭스,Conflux Network
+KRW-ACS,액세스프로토콜,Access Protocol
+KRW-FXS,프랙스 셰어,Frax Share
+KRW-CELO,셀로,Celo
+KRW-LDO,리도다오,Lido DAO
+KRW-S,소닉,Sonic
+KRW-FET,페치,Fetch.ai
+KRW-SUI,수이,SUI
+KRW-NCT,폴리스웜,Polyswarm
+KRW-FLOKI,플로키,FLOKI
+KRW-ALEX,알렉스,ALEX Lab
+KRW-ID,스페이스 아이디,SPACE ID
+KRW-RENDER,렌더토큰,Render Token
+KRW-STG,스타게이트 파이낸스,Stargate Finance
+KRW-OSMO,오스모시스,Osmosis
+KRW-FIL,파일코인,Filecoin
+KRW-ILV,일루비움,Illuvium
+KRW-MAV,매버릭 프로토콜,Maverick Protocol
+KRW-RSS3,알에스에스쓰리,RSS3
+KRW-AUDIO,오디우스,Audius
+KRW-AGI,델리시움,Delysium
+KRW-ASTR,아스타,Astar
+KRW-WLD,월드코인,Worldcoin
+KRW-FLUX,플럭스,Flux
+KRW-AGLD,어드벤처골드,Adventure Gold
+KRW-AR,알위브,Arweave
+KRW-RVN,레이븐코인,Ravencoin
+KRW-LEVER,레버파이,LeverFi
+KRW-EDU,오픈 캠퍼스,Open Campus
+KRW-SEI,세이,Sei
+KRW-WAXL,엑셀라,Axelar
+KRW-MOC,모스코인,Moss Coin
+KRW-PEPE,페페,PEPE
+KRW-CYBER,사이버,Cyber
+KRW-ARKM,아캄,Arkham
+KRW-PYR,불칸 포지드,Vulcan Forged
+KRW-IOTX,아이오텍스,IoTeX
+KRW-HIGH,하이스트리트,Highstreet
+KRW-PENDLE,펜들,Pendle
+KRW-BICO,바이코노미,Biconomy
+KRW-STORJ,스토리지,Storj
+KRW-API3,에이피아이쓰리,API3
+KRW-ZTX,지티엑스,ZTX
+KRW-MNT,맨틀,Mantle
+KRW-GTC,깃코인,Gitcoin
+KRW-METIS,메티스다오,MetisDAO
+KRW-TIA,셀레스티아,Celestia
+KRW-ICP,인터넷 컴퓨터,Internet Computer
+KRW-SPURS,토트넘 홋스퍼,Tottenham Hotspur Fan Token
+KRW-NEO,네오,Neo
+KRW-GAS,가스,Gas
+KRW-HIFI,하이파이,Hifi Finance
+KRW-BIGTIME,빅타임,Big Time
+KRW-ZETA,제타체인,ZetaChain
+KRW-GRS,그로스톨코인,Groestlcoin
+KRW-ARK,아크,Ark
+KRW-YGG,일드길드게임즈,Yield Guild Games
+KRW-HUNT,헌트,Hunt Town
+KRW-KAVA,카바,Kava
+KRW-STMX,스톰엑스,StormX
+KRW-MAGIC,매직,Magic
+KRW-AUCTION,바운스토큰,Bounce Token
+KRW-USDT,테더,Tether USDt
+KRW-USDC,유에스디코인,USD Coin
+KRW-RAD,래드웍스,Radworks
+KRW-LSK,리스크,Lisk
+KRW-TT,썬더코어,ThunderCore
+KRW-ACE,퓨저니스트,Fusionist
+KRW-SKL,스케일,SKALE
+KRW-IQ,아이큐,IQ
+KRW-PYTH,피스 네트워크,Pyth Network
+KRW-MANTA,만타 네트워크,Manta Network
+KRW-AKT,아카시 네트워크,Akash Network
+KRW-BEAM,빔,Beam
+KRW-JTO,지토,Jito
+KRW-JUP,주피터,Jupiter
+KRW-STRK,스타크넷,Starknet
+KRW-SC,시아코인,Siacoin
+KRW-BONK,봉크,Bonk
+KRW-TOKAMAK,토카막 네트워크,Tokamak Network
+KRW-AIOZ,아이오즈 네트워크,AIOZ Network
+KRW-ZK,지케이싱크,zkSync
+KRW-ONDO,온도 파이낸스,Ondo Finance
+KRW-ALT,알트레이어,AltLayer
+KRW-NEAR,니어프로토콜,NEAR Protocol
+KRW-RON,로닌,Ronin
+KRW-FIDA,솔라나 네임 서비스,Solana Name Service
+KRW-STRAX,스트라티스,Stratis
+KRW-XAI,자이,Xai
+KRW-W,웜홀,Wormhole
+KRW-POLYX,폴리매쉬,Polymesh
+KRW-CORE,코어,Core
+KRW-BB,바운스빗,BounceBit
+KRW-REZ,렌조,Renzo
+KRW-OMNI,옴니 네트워크,Omni Network
+KRW-ENA,에테나,Ethena
+KRW-MOCA,모카네트워크,Moca Network
+KRW-ETHFI,이더파이,ether.fi
+KRW-MEW,캣인어독스월드,cat in a dogs world
+KRW-ZRO,레이어제로,LayerZero
+KRW-IO,아이오넷,io.net
+KRW-BLAST,블라스트,Blast
+KRW-TAIKO,타이코,Taiko
+KRW-BRETT,브렛,Brett
+KRW-ATH,에이셔,Aethir
+KRW-PCI,페이코인,Paycoin
+KRW-AVAIL,어베일,Avail
+KRW-TON,톤코인,Toncoin
+KRW-G,그래비티,Gravity
+KRW-PEAQ,피크,peaq
+KRW-EIGEN,아이겐레이어,EigenLayer
+KRW-ORDER,오덜리 네트워크,Orderly Network
+KRW-SCR,스크롤,Scroll
+KRW-SWELL,스웰 네트워크,Swell Network
+KRW-UXLINK,유엑스링크,UXLINK
+KRW-SKY,스카이 프로토콜,Sky Protocol
+KRW-PONKE,폰케,Ponke
+KRW-MVL,엠블,MVL
+KRW-CARV,카브,CARV
+KRW-PUFFER,퍼퍼,Puffer
+KRW-SUNDOG,썬도그,Sundog
+KRW-TURBO,터보,Turbo
+KRW-RAY,레이디움,Raydium
+KRW-SAFE,세이프,Safe
+KRW-VIRTUAL,버추얼 프로토콜,Virtuals Protocol
+KRW-DRIFT,드리프트,Drift
+KRW-MOVE,무브먼트,Movement
+KRW-F,신퓨처스,Synfutures
+KRW-DEEP,딥북,DeepBook
+KRW-MORPHO,모포,Morpho
+KRW-NEIRO,네이로,Neiro
+KRW-MOODENG,무뎅,Moo Deng
+KRW-DBR,디브릿지,deBridge
+KRW-GOAT,고트세우스 막시무스,Goatseus Maximus
+KRW-NIL,닐리온,Nillion
+KRW-ME,매직 에덴,Magic Eden
+KRW-ZRC,저킷,Zircuit
+KRW-IOTA,아이오타,IOTA
+KRW-PENGU,펏지 펭귄,Pudgy Penguins
+KRW-ACX,어크로스 프로토콜,Across Protocol
+KRW-AERO,에어로드롬 파이낸스,Aerodrome Finance
+KRW-THE,테나,THENA
+KRW-AMP,앰프,Amp
+KRW-VANA,바나,Vana
+KRW-XYO,엑스와이오,XYO
+KRW-A8,에인션트8,Ancient8
+KRW-SONIC,소닉 에스브이엠,Sonic SVM
+KRW-IP,스토리,Story
+KRW-DKA,디카르고,dKargo
+KRW-SOLV,솔브 프로토콜,Solv Protocol
+KRW-QKC,쿼크체인,QuarkChain
+KRW-HPO,히포크랏,Hippocrat
+KRW-GAME2,게임빌드,GameBuild
+KRW-STRIKE,스트라이크,Strike
+KRW-ARDR,아더,Ardor
+KRW-BOUNTY,체인바운티,Chainbounty
+KRW-SHELL,마이쉘,MyShell
+KRW-BERA,베라체인,Berachain
+KRW-PLUME,플룸,Plume
+KRW-OBT,오비터 파이낸스,Orbiter Finance
+KRW-TRUMP,오피셜 트럼프,OFFICIAL TRUMP
+KRW-KERNEL,커널 다오,Kernel DAO
+KRW-COOKIE,쿠키 다오,Cookie DAO
+KRW-GNO,노시스,Gnosis
+KRW-VTHO,비토르 토큰,VeThor Token
+KRW-ANIME,애니메코인,Animecoin
+KRW-RED,레드스톤,RedStone
+KRW-LAYER,솔레이어,Solayer
+KRW-WCT,월렛커넥트,WalletConnect
+KRW-KAITO,카이토,Kaito
+KRW-BMT,버블맵스,Bubblemaps
+KRW-PAXG,팍스골드,PAX Gold
+KRW-AVL,아발론,Avalon
+KRW-PUNDIAI,펀디에이아이,Pundi AI
+KRW-ELX,엘릭서,Elixir
+KRW-COW,카우 프로토콜,CoW Protocol
+KRW-WAL,월러스,Walrus
+KRW-BABY,바빌론,Babylon
+KRW-GRASS,그래스,Grass
+KRW-ORCA,오르카,Orca
+KRW-PUMP,펌프,PUMP
+KRW-HAEDAL,해달 프로토콜,Haedal Protocol
+KRW-AI16Z,에이아이식스틴즈,ai16z
+KRW-SIGN,사인,Sign
+BTC-ETH,이더리움,Ethereum
+BTC-XRP,엑스알피 [리플],XRP
+BTC-KAIA,카이아,Kaia
+BTC-KSP,클레이스왑,KlaySwap Protocol
+BTC-DOGE,도지코인,Dogecoin
+BTC-BNB,비앤비,BNB
+BTC-SOL,솔라나,Solana
+BTC-ENS,이더리움네임서비스,Ethereum Name Service
+BTC-CSPR,캐스퍼,Casper
+BTC-WITCH,위치 토큰,Witch Token
+BTC-TALK,톡큰,Talken
+BTC-DICE,클레이다이스,KLAYDICE
+BTC-AHT,아하토큰,AhaToken
+BTC-KWENTA,크웬타,Kwenta
+BTC-HVH,하바,HAVAH

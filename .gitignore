@@ -1,0 +1,10 @@
+# AutoBitTrade/.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+.env
+dist/
+build/
+*.log
+logs/
