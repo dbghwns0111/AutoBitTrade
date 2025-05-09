@@ -65,12 +65,15 @@ def place_order(market, side, volume, price, ord_type='limit'):
     resp = requests.post(f"{apiUrl}/v1/orders", headers=headers, data=json.dumps(body))
     return resp.json()
 
-# 주문 취소
+# 주문 취소 함수 (UUID 기반)
 def cancel_order(order_uuid):
-    query = {"uuid": order_uuid}
-    headers = _make_token(query)
-    resp = requests.delete(f"{apiUrl}/v1/order", params=query, headers=headers)
-    return resp.json()
+    try:
+        param = {'uuid': order_uuid}
+        headers = _make_token(param)
+        response = requests.delete(f"{apiUrl}/v1/order", params=param, headers=headers)
+        return response.json()
+    except Exception as e:
+        return {"status": "9999", "message": str(e)}
 
 # 개별 주문 조회
 def get_order_detail(order_uuid):

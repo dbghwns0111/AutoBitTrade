@@ -1,5 +1,5 @@
 # AutoBitTrade/strategy/auto_buy_sell.py
-# 매수 → 매도 + 다음 매수 동시 실행 전략 (텔레그램 알림 + 단일 CSV 로그 저장)
+# 매수 → 매도 + 다음 매수 동시 실행 전략 (stop_condition 대응 + 로그 저장 + 텔레그램 연동)
 
 import time
 import math
@@ -11,15 +11,16 @@ from config.tick_table import TICK_SIZE
 from utils.telegram import send_telegram_message
 
 
-def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_orders, market_code='USDT', sleep_sec=5):
+def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_orders, market_code='USDT', sleep_sec=5, stop_condition=None):
     """
-    매수 체결 시 다음 매수 + 매도 전략
+    매수 체결 시 다음 매수 + 매도 전략 (중단 조건 포함)
     :param start_price: 시작 가격 (float)
     :param percent_interval: 간격 퍼센트 (float)
     :param krw_amount: 회차당 매수 금액 (KRW)
     :param max_orders: 최대 매수 차수 (int)
     :param market_code: 종목 (예: USDT)
     :param sleep_sec: 대기 시간
+    :param stop_condition: 중단 조건 함수 (기본 None)
     :return: 체결 결과 리스트
     """
     orders = []
@@ -42,6 +43,10 @@ def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_order
             writer.writeheader()
 
         for i in range(max_orders):
+            if stop_condition and stop_condition():
+                print("🛑 전략 중단 감지됨, 매수 중단")
+                break
+
             rate = 1 - (percent_interval / 100) * i
             raw_price = start_price * rate
             buy_price = math.floor(raw_price / tick) * tick
@@ -58,6 +63,10 @@ def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_order
 
             while True:
                 time.sleep(sleep_sec)
+                if stop_condition and stop_condition():
+                    print("🛑 체결 대기 중 중단 감지됨, 종료")
+                    return orders
+
                 detail = get_order_detail(uuid)
                 data = detail.get('data') or detail
                 try:
