@@ -10,7 +10,6 @@ from api.api import place_order, get_order_detail
 from config.tick_table import TICK_SIZE
 from utils.telegram import send_telegram_message
 
-
 def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_orders, market_code='USDT', sleep_sec=5, stop_condition=None):
     """
     매수 체결 시 다음 매수 + 매도 전략 (중단 조건 포함)
@@ -58,7 +57,7 @@ def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_order
 
             if not uuid:
                 print(f"❌ 매수 주문 실패: {res}")
-                send_telegram_message(f"❌ <b>{market_code}</b> {i+1}/{max_orders}차 매수 주문 실패\n{res}")
+                send_telegram_message(f"❌ <b>{market_code}</b> {i+1}/{max_orders}차 매수 주문 실패\n{res}\n🕒 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 break
 
             while True:
@@ -77,12 +76,12 @@ def run_buy_then_sell_chain(start_price, percent_interval, krw_amount, max_order
                     remaining = 1
 
                 if executed > 0 and remaining == 0:
-                    print(f"✅ {i+1}차 매수 체결 완료")
+                    print(f"✅ {i+1}차 매수 체결 완료 🕒 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                     send_telegram_message(
-                        f"✅ <b>{market_code}</b> {i+1}/{max_orders}차 매수 체결\n📉 가격: {buy_price}원\n📦 수량: {volume}")
+                        f"✅ <b>{market_code}</b> {i+1}/{max_orders}차 매수 체결\n📉 가격: {buy_price}원\n📦 수량: {volume}\n🕒 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                     break
                 else:
-                    print(f"⏳ 매수 미체결 (체결: {executed}, 잔여: {remaining})")
+                    print(f"⏳ 매수 미체결 (체결: {executed}, 잔여: {remaining}) 🕒 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
             sell_rate = 1 + (percent_interval / 100)
             raw_sell_price = buy_price * sell_rate
