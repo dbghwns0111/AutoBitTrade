@@ -9,6 +9,19 @@ from api.api import place_order, get_order_detail
 from config.tick_table import TICK_SIZE
 from utils.telegram import send_telegram_message
 
+# 가격 계산 함수: 퍼센트 또는 고정 금액으로 가격 조정
+# mode: 'percent' 또는 'price'
+def calculate_price(base_price, gap_value, mode, direction):
+    if mode == 'percent':
+        rate = (1 + gap_value / 100) if direction == 'up' else (1 - gap_value / 100)
+        return round(base_price * rate, 2)
+    elif mode == 'price':
+        return round(base_price + gap_value, 2) if direction == 'up' else round(base_price - gap_value, 2)
+    else:
+        raise ValueError("mode는 'percent' 또는 'price' 여야 합니다.")
+
+# 그리드 레벨 클래스: 각 차수의 매수/매도 가격과 수량을 관리
+# 레벨(level), 매수 가격(buy_price), 매도 가격(sell_price),
 class GridLevel:
     def __init__(self, level, buy_price, sell_price, volume):
         self.level = level
@@ -20,6 +33,7 @@ class GridLevel:
         self.buy_filled = False
         self.sell_filled = False
 
+# 자동 매매 실행 함수: 시작 가격, 퍼센트 간격, KRW 금액, 최대 차수 설정
 def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market_code='USDT', sleep_sec=5, stop_condition=None):
     market_code = market_code.upper()
     market = f"KRW-{market_code}"
@@ -78,9 +92,9 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
                 if executed > 0 and remaining == 0:
                     level.sell_filled = True
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    print(f"💰 [{level.level}차] 매도 체결 완료: {level.sell_price}원")
+                    print(f"✅ [{level.level}차] 매도 체결 완료: {level.sell_price}원")
                     send_telegram_message(
-                        f"💰 <b>{market_code}</b> {level.level}차 매도 체결\n📈 가격: {level.sell_price}원\n📦 수량: {level.volume}\n🕒 {now}")
+                        f"✅ <b>{market_code}</b> {level.level}차 매도 체결\n📈 가격: {level.sell_price}원\n📦 수량: {level.volume}\n🕒 {now}")
 
                     # 🔁 반복 매매를 위해 초기화 후 다시 매수
                     level.buy_uuid = None
@@ -91,6 +105,7 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
 
         time.sleep(sleep_sec)
 
+# 주문 등록 함수: 매수 또는 매도 주문을 API를 통해 실행
 def place_buy(level, market):
     res = place_order(market, 'bid', level.volume, level.buy_price, 'limit')
     uuid = res.get('uuid') or res.get('data', {}).get('uuid')
