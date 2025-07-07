@@ -98,3 +98,19 @@ def get_order_list(market='KRW-BTC', limit=100, page=1, order_by='desc', uuids=N
     headers = _make_token(query)
     resp = requests.get(f"{apiUrl}/v1/orders", params=query, headers=headers)
     return resp.json()
+
+# 전체 주문 취소
+def cancel_all_orders(market):
+    print(f"📋 {market} 미체결 주문 조회 중...")
+    orders = get_order_list(market)
+
+    if not orders:
+        print("✅ 취소할 주문 없음")
+        return
+
+    for order in orders:
+        uuid = order.get("order_id") or order.get("uuid")
+        if uuid:
+            res = cancel_order(uuid)
+            print(f"🗑️ 주문 취소 요청: {uuid} → {res}")
+            time.sleep(0.2)
