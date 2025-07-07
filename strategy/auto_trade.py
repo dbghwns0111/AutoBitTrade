@@ -39,7 +39,7 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
     print(f"📊 자동 매매 시작: {max_levels}차까지 설정됨.")
     send_telegram_message(f"🚀 자동매매 시작: 최대 {max_levels}차, 간격 {percent_interval}%, 시작가 {start_price}원")
 
-    # 1차 매수부터 시작
+    # ✅ 전략 시작 시 1차 매수만 등록
     place_buy(levels[0], market)
 
     while True:
@@ -47,8 +47,8 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
             print("🛑 사용자 중단 감지됨. 종료합니다.")
             break
 
-        for idx, level in enumerate(levels):
-            # 매수 체결 감지
+        for level in levels:
+            # ✅ 매수 체결 감지
             if level.buy_uuid and not level.buy_filled:
                 detail = get_order_detail(level.buy_uuid)
                 data = detail.get('data') or detail
@@ -58,16 +58,18 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
                     level.buy_filled = True
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print(f"✅ [{level.level}차] 매수 체결 완료: {level.buy_price}원")
-                    send_telegram_message(f"✅ <b>{market_code}</b> {level.level}차 매수 체결\n📉 가격: {level.buy_price}원\n📦 수량: {level.volume}\n🕒 {now}")
-
-                    # 매도 주문
+                    send_telegram_message(
+                        f"✅ <b>{market_code}</b> {level.level}차 매수 체결\n📉 가격: {level.buy_price}원\n📦 수량: {level.volume}\n🕒 {now}")
+                    
+                    # 📤 매도 주문
                     place_sell(level, market)
 
-                    # 다음 차수 매수 주문 예약
-                    if idx + 1 < len(levels):
-                        place_buy(levels[idx + 1], market)
+                    # 🛒 다음 차수 매수 주문
+                    next_idx = level.level
+                    if next_idx < len(levels):
+                        place_buy(levels[next_idx], market)
 
-            # 매도 체결 감지
+            # ✅ 매도 체결 감지
             if level.sell_uuid and not level.sell_filled:
                 detail = get_order_detail(level.sell_uuid)
                 data = detail.get('data') or detail
@@ -77,7 +79,15 @@ def run_auto_trade(start_price, percent_interval, krw_amount, max_levels, market
                     level.sell_filled = True
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print(f"💰 [{level.level}차] 매도 체결 완료: {level.sell_price}원")
-                    send_telegram_message(f"💰 <b>{market_code}</b> {level.level}차 매도 체결\n📈 가격: {level.sell_price}원\n📦 수량: {level.volume}\n🕒 {now}")
+                    send_telegram_message(
+                        f"💰 <b>{market_code}</b> {level.level}차 매도 체결\n📈 가격: {level.sell_price}원\n📦 수량: {level.volume}\n🕒 {now}")
+
+                    # 🔁 반복 매매를 위해 초기화 후 다시 매수
+                    level.buy_uuid = None
+                    level.sell_uuid = None
+                    level.buy_filled = False
+                    level.sell_filled = False
+                    place_buy(level, market)
 
         time.sleep(sleep_sec)
 
