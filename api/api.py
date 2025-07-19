@@ -76,11 +76,19 @@ def cancel_order(order_uuid):
         return {"status": "9999", "message": str(e)}
 
 # 개별 주문 조회
-def get_order_detail(order_uuid):
+def get_order_detail(order_uuid, retries=3, delay=1):
     query = {"uuid": order_uuid}
     headers = _make_token(query)
-    resp = requests.get(f"{apiUrl}/v1/order", params=query, headers=headers)
-    return resp.json()
+
+    for attempt in range(retries):
+        try:
+            resp = requests.get(f"{apiUrl}/v1/order", params=query, headers=headers, timeout=5)
+            return resp.json()
+        except requests.exceptions.RequestException as e:
+            print(f"[{attempt + 1}/{retries}] 주문 조회 실패: {e}")
+            time.sleep(delay)
+
+    return {"status": "9999", "message": "get_order_detail 요청 실패: 최대 재시도 초과"}
 
 # 주문 리스트 조회
 
@@ -114,3 +122,14 @@ def cancel_all_orders(market):
             res = cancel_order(uuid)
             print(f"🗑️ 주문 취소 요청: {uuid} → {res}")
             time.sleep(0.2)
+
+# 현재가 조회
+def get_current_price(market='KRW-BTC'):
+    query = {"currency": market.split('-')[1]}
+    resp = requests.get(f"{apiUrl}/public/ticker/{market}", params=query)
+    data = resp.json()
+    if data['status'] == '0000':
+        return float(data['data']['closing_price'])
+    else:
+        print(f"❌ 현재가 조회 실패: {data['message']}")
+        return None

@@ -2,9 +2,9 @@ import os
 import subprocess
 
 def create_spec():
-    print("[1] gui_app.spec 생성 중...")
+    print("[1] AutoBitTrade.spec 생성 중...")
     spec_code = '''
-# gui_app.spec
+# AutoBitTrade.spec
 # -*- mode: python ; coding: utf-8 -*-
 block_cipher = None
 
@@ -36,12 +36,12 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='gui_app',
+    name='AutoBitTrade',  # ✅ 실행파일 이름 변경
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False
+    console=False  # ⛔ 콘솔 숨김
 )
 
 coll = COLLECT(
@@ -52,17 +52,17 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='gui_app'
+    name='AutoBitTrade'  # ✅ 폴더명도 AutoBitTrade로 설정
 )
 '''
-    with open("gui_app.spec", "w", encoding="utf-8") as f:
+    with open("AutoBitTrade.spec", "w", encoding="utf-8") as f:
         f.write(spec_code.strip())
 
 def build():
     print("[2] 빌드 실행 중 (캐시 사용)...")
-    result = subprocess.run(["pyinstaller", "gui_app.spec", "--noconfirm"])
+    result = subprocess.run(["pyinstaller", "AutoBitTrade.spec", "--noconfirm"])
     if result.returncode == 0:
-        print("[3] ✅ 빌드 완료: dist\\gui_app\\gui_app.exe")
+        print("[3] ✅ 빌드 완료: dist\\AutoBitTrade\\AutoBitTrade.exe")
     else:
         print("[3] ❌ 빌드 실패!")
 

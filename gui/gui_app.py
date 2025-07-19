@@ -1,4 +1,5 @@
-# AutoBitTrade/gui/gui_app.py
+## File: gui/gui_app.py
+# AutoBitTrade GUI Application - Fixed Version
 
 import os
 import sys
@@ -6,6 +7,7 @@ import customtkinter as ctk
 import threading
 import time
 from tkinter import messagebox
+import queue
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -13,143 +15,462 @@ from strategy.auto_trade import run_auto_trade
 from utils.telegram import send_telegram_message
 from utils.price import get_current_price
 from api.api import cancel_all_orders
+from shared.state import strategy_info
 
+# CustomTkinter 설정
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
 
+# GUI 앱 생성
+app = ctk.CTk()
+app.title("AutoBitTrade")
+app.geometry("600x800")
+
+# 전역 변수
 stop_flag = False
+running_flag = False
+order_status_cards = {}  # 카드뷰 상태 저장
+strategy_summary_labels = {}
+status_queue = queue.Queue()  # 스레드 간 통신을 위한 큐
+
 def stop_condition():
     return stop_flag
 
-def update_multi_prices(labels):
-    while True:
-        for coin, label in labels.items():
-            price = get_current_price(coin)
-            if price:
-                now = time.strftime('%H:%M:%S')
-                label.configure(text=f"{coin}: {price:,.0f} KRW  ⏱ {now}")
-        time.sleep(3)
+realized_profit = 0.0
+
+# 전략 요약 정보 업데이트 함수
+def update_strategy_summary():
+    """전략 요약 정보 업데이트"""
+    try:
+        current = strategy_info.get("current_price", 0)
+        start = strategy_info.get("start_price", 0)
+        profit = strategy_info.get("realized_profit", 0)
+
+        summary_labels["market"].configure(text=f"코인: {strategy_info['market']}")
+        summary_labels["start_price"].configure(text=f"시작가: {start:,.0f} KRW")
+        summary_labels["current_price"].configure(text=f"현재가: {current:,.0f} KRW")
+        
+        color = "green" if profit >= 0 else "red"
+        summary_labels["profit"].configure(
+            text=f"수익액: {profit:,.0f} KRW",
+            text_color=color
+        )
+    except Exception as e:
+        print(f"[ERROR] update_strategy_summary: {e}")
+
+# 현재가 업데이트 함수
+def update_current_price():
+    """현재가 업데이트 (별도 스레드)"""
+    def price_update_loop():
+        while True:  # running_flag 대신 무조건 루프
+            try:
+                if strategy_info["market"] != "-":
+                    market_code = f"KRW-{strategy_info['market']}"
+                    price = get_current_price(market_code)
+                    if price and price > 0:
+                        strategy_info["current_price"] = price
+                        app.after(0, update_strategy_summary)
+                time.sleep(3)
+            except Exception as e:
+                print(f"[ERROR] price_update_loop: {e}")
+                time.sleep(5)
+
+    threading.Thread(target=price_update_loop, daemon=True).start()
+
+def update_order_status(level, text):
+    """주문 상태 업데이트 - 메인 스레드에서 안전하게 실행"""
+    try:
+        # 큐에 업데이트 정보 추가
+        status_queue.put(("order_status", level, text))
+        # 메인 스레드에서 처리하도록 스케줄링
+        app.after(0, process_status_updates)
+    except Exception as e:
+        print(f"[ERROR] update_order_status: {e}")
+
+def process_status_updates():
+    """큐에서 상태 업데이트 처리"""
+    try:
+        while not status_queue.empty():
+            update_type, level, text = status_queue.get_nowait()
+            
+            if update_type == "order_status":
+                # 주문 상태 카드 업데이트
+                if level in order_status_cards:
+                    label = order_status_cards[level]["label"]
+                    
+                    # 매도 체결 시 수익 계산
+                    if "매도 체결" in text:
+                        try:
+                            # 수익 계산 로직
+                            parts = text.split()
+                            if len(parts) >= 4:
+                                price_str = parts[3].replace("원", "").replace(",", "")
+                                price = float(price_str)
+                                
+                                # 기존 매수 가격 찾기
+                                current_text = label.cget("text")
+                                if "매수 체결" in current_text:
+                                    buy_parts = current_text.split()
+                                    if len(buy_parts) >= 4:
+                                        buy_price_str = buy_parts[3].replace("원", "").replace(",", "")
+                                        buy_price = float(buy_price_str)
+                                        
+                                        # 수익 계산 (간단한 예시)
+                                        profit_rate = ((price - buy_price) / buy_price) * 100
+                                        
+                                        label.configure(
+                                            text=f"[{level}차] 매도 체결 ✅\n수익률: {profit_rate:+.2f}%",
+                                            text_color="green" if profit_rate >= 0 else "red"
+                                        )
+                                    else:
+                                        label.configure(text=text, text_color="blue")
+                                else:
+                                    label.configure(text=text, text_color="blue")
+                        except Exception as e:
+                            print(f"[ERROR] 매도 체결 처리 중 오류: {e}")
+                            label.configure(text=text, text_color="blue")
+                    
+                    # 매수 체결
+                    elif "매수 체결" in text:
+                        label.configure(text=text, text_color="orange")
+                    
+                    # 매수 주문
+                    elif "매수 주문" in text:
+                        label.configure(text=text, text_color="yellow")
+                    
+                    # 매도 주문
+                    elif "매도 주문" in text:
+                        label.configure(text=text, text_color="cyan")
+                    
+                    # 기타
+                    else:
+                        label.configure(text=text)
+                        
+    except Exception as e:
+        print(f"[ERROR] process_status_updates: {e}")
 
 def start_strategy():
-    def run():
-        global stop_flag
-        stop_flag = False
+    """전략 시작"""
+    threading.Thread(target=update_current_price_loop, daemon=True).start()
+    global stop_flag, running_flag
+    
+    if running_flag:
+        messagebox.showwarning("알림", "이미 전략이 실행 중입니다.")
+        return
+        
+    # 입력값 검증
+    try:
+        market = entry_market.get().strip().upper()
+        start_price = float(entry_price.get())
+        krw_amount = float(entry_amount.get())
+        max_levels = int(entry_rounds.get())
+        buy_gap = float(entry_buy_gap.get())
+        sell_gap = float(entry_sell_gap.get())
+        
+        if not market or start_price <= 0 or krw_amount <= 0 or max_levels <= 0:
+            messagebox.showerror("입력 오류", "모든 필드를 올바르게 입력해주세요.")
+            return
+            
+    except ValueError:
+        messagebox.showerror("입력 오류", "숫자 필드에 올바른 값을 입력해주세요.")
+        return
+
+    def run_strategy():
+        """전략 실행 스레드"""
+        global stop_flag, running_flag
+        
         try:
-            market = entry_market.get().strip().upper()
-            start_price = float(entry_price.get())
-            krw_amount = float(entry_amount.get())
-            max_levels = int(entry_rounds.get())
-            buy_gap = float(entry_buy_gap.get())
-            sell_gap = float(entry_sell_gap.get())
-            buy_mode_val = buy_mode.get()
-            sell_mode_val = sell_mode.get()
-
-            send_telegram_message(
-                f"🚀 전략 시작: {market} / 시작가 {start_price}원 / 매수 {buy_gap}{'%' if buy_mode_val=='percent' else '원'} / "
-                f"매도 {sell_gap}{'%' if sell_mode_val=='percent' else '원'} / {krw_amount} KRW")
-
+            stop_flag = False
+            running_flag = True
+            
+            # UI 상태 업데이트
+            app.after(0, lambda: btn_start.configure(state="disabled"))
+            app.after(0, lambda: btn_stop.configure(state="normal"))
+            app.after(0, lambda: label_status.configure(text="전략 실행 중...", text_color="green"))
+            
+            # 전략 정보 저장
+            strategy_info.update({
+                "market": market,
+                "start_price": start_price,
+                "krw_amount": krw_amount,
+                "max_levels": max_levels,
+                "current_price": start_price,
+                "realized_profit": 0.0
+            })
+            
+            # UI 업데이트
+            app.after(0, update_strategy_summary)
+            
+            # 현재가 업데이트 시작
+            update_current_price()
+            
+            # 주문 상태 카드 초기화
+            app.after(0, lambda: initialize_order_cards(max_levels))
+            
+            print(f"[DEBUG] 전략 실행 시작 - {market}, 시작가: {start_price}")
+            
+            # 전략 실행
             run_auto_trade(
                 start_price=start_price,
                 krw_amount=krw_amount,
                 max_levels=max_levels,
                 market_code=market,
                 buy_gap=buy_gap,
-                buy_mode=buy_mode_val,
+                buy_mode=buy_mode.get(),
                 sell_gap=sell_gap,
-                sell_mode=sell_mode_val,
+                sell_mode=sell_mode.get(),
                 stop_condition=stop_condition,
-                sleep_sec=5
+                sleep_sec=5,
+                status_callback=update_order_status,
+                summary_callback=update_strategy_summary
             )
-
+            
+            # 전략 종료 처리
             if stop_flag:
-                messagebox.showwarning("전략 중단됨", "사용자에 의해 전략이 중단되었습니다.")
+                app.after(0, lambda: messagebox.showwarning("전략 중단", "사용자에 의해 전략이 중단되었습니다."))
+                app.after(0, lambda: label_status.configure(text="🛑 전략 중단됨", text_color="red"))
             else:
-                messagebox.showinfo("전략 종료", "전략이 완료되었습니다.")
+                app.after(0, lambda: messagebox.showinfo("전략 완료", "전략이 성공적으로 완료되었습니다."))
+                app.after(0, lambda: label_status.configure(text="✅ 전략 완료", text_color="gray"))
+                
         except Exception as e:
-            messagebox.showerror("오류", f"전략 실행 중 오류 발생:\n{e}")
-    threading.Thread(target=run, daemon=True).start()
+            import traceback
+            error_msg = f"전략 실행 중 오류 발생:\n{str(e)}"
+            print(f"[ERROR] {error_msg}")
+            print(f"[TRACEBACK] {traceback.format_exc()}")
+            app.after(0, lambda: messagebox.showerror("오류", error_msg))
+            app.after(0, lambda: label_status.configure(text="❌ 전략 오류", text_color="red"))
+            
+        finally:
+            # UI 상태 복원
+            running_flag = False
+            app.after(0, lambda: btn_start.configure(state="normal"))
+            app.after(0, lambda: btn_stop.configure(state="disabled"))
+    
+    # 전략 실행 스레드 시작
+    threading.Thread(target=run_strategy, daemon=True).start()
+
+def initialize_order_cards(max_levels):
+    """주문 상태 카드 초기화 (개선된 디자인)"""
+    try:
+        # 기존 카드 제거
+        for widget in status_scroll_container.winfo_children():
+            widget.destroy()
+        
+        order_status_cards.clear()
+        
+        # 새 카드 생성
+        for i in range(max_levels):
+            level = i + 1
+            card = ctk.CTkFrame(status_scroll_container)
+            card.grid(row=i, column=0, sticky="we", padx=5, pady=3)
+            
+            # 카드 내부 레이아웃
+            card_inner = ctk.CTkFrame(card)
+            card_inner.pack(fill="both", expand=True, padx=8, pady=8)
+            
+            # 차수 라벨
+            level_label = ctk.CTkLabel(card_inner, text=f"{level}차", 
+                                     font=ctk.CTkFont(size=12, weight="bold"),
+                                     width=40)
+            level_label.pack(side="left", padx=(0, 10))
+            
+            # 상태 라벨
+            label = ctk.CTkLabel(card_inner, text="⏳ 대기 중...", anchor="w",
+                               font=ctk.CTkFont(size=12))
+            label.pack(side="left", fill="x", expand=True)
+            
+            order_status_cards[level] = {"frame": card, "label": label}
+            
+    except Exception as e:
+        print(f"[ERROR] initialize_order_cards: {e}")
 
 def stop_strategy():
+    """전략 중단"""
     global stop_flag
+    
+    if not running_flag:
+        messagebox.showwarning("알림", "실행 중인 전략이 없습니다.")
+        return
+    
     stop_flag = True
-    market = entry_market.get().strip().upper()
-    full_market = f"KRW-{market}"
+    
     try:
+        market = entry_market.get().strip().upper()
+        full_market = f"KRW-{market}"
+        
+        # 모든 주문 취소
         cancel_all_orders(full_market)
         send_telegram_message(f"🛑 {market} 전략 중단 및 주문 전체 취소 완료")
+        
+        label_status.configure(text="🛑 전략 중단 중...", text_color="orange")
+        
+        # 주문 상태 카드 업데이트
+        for level, card in order_status_cards.items():
+            card["label"].configure(text=f"{level}차 ⛔ 전략 중단됨", text_color="gray")
+            
     except Exception as e:
-        send_telegram_message(f"⚠️ 주문 취소 오류: {e}")
+        error_msg = f"전략 중단 중 오류: {str(e)}"
+        print(f"[ERROR] {error_msg}")
+        send_telegram_message(f"⚠️ {error_msg}")
+        messagebox.showerror("오류", error_msg)
 
-# 앱 UI 구성
-app = ctk.CTk()
-app.title("AutoBitTrade - customtkinter 버전")
-app.geometry("800x800")
+# 정기적으로 상태 업데이트 처리
+def periodic_update():
+    """정기적인 업데이트 처리"""
+    try:
+        process_status_updates()
+    except Exception as e:
+        print(f"[ERROR] periodic_update: {e}")
+    finally:
+        app.after(100, periodic_update)  # 100ms마다 실행
 
-# 시세 표시
-label_btc = ctk.CTkLabel(app, text="BTC: - KRW", font=ctk.CTkFont(size=14, weight="bold"))
-label_usdt = ctk.CTkLabel(app, text="USDT: - KRW", font=ctk.CTkFont(size=14, weight="bold"))
-label_xrp = ctk.CTkLabel(app, text="XRP: - KRW", font=ctk.CTkFont(size=14, weight="bold"))
-label_btc.grid(row=0, column=0, padx=10, pady=10, sticky='w')
-label_usdt.grid(row=0, column=1, padx=10, pady=10, sticky='w')
-label_xrp.grid(row=0, column=2, padx=10, pady=10, sticky='w')
+# 현재가 실시간 갱신 루프
+def update_current_price_loop():
+    while running_flag:
+        try:
+            current_price = get_current_price(strategy_info['market'])
+            strategy_info['current_price'] = current_price
+            update_strategy_summary()
+        except Exception as e:
+            print(f"[ERROR] 가격 갱신 실패: {e}")
+        time.sleep(3)
+        
+# UI 구성
+### 1. 입력 UI 프레임 (개선된 디자인)
+# 입력 프레임 전체 가운데 정렬 및 확장 가능 설정
+input_frame = ctk.CTkFrame(app)
+input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nwe")
+input_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
 
-# 기본 입력
-labels = ["코인 코드 (예: USDT)", "시작 매수가 (원)", "회차당 매수 금액 (원)", "최대 매수 차수"]
-entries = []
-for i, label in enumerate(labels):
-    ctk.CTkLabel(app, text=label).grid(row=i+1, column=0, padx=10, pady=6, sticky="w")
-    entry = ctk.CTkEntry(app, width=200)
-    entry.grid(row=i+1, column=1, columnspan=2, padx=5, pady=6, sticky="w")
-    entries.append(entry)
+# 기본 설정 프레임
+basic_frame = ctk.CTkFrame(input_frame)
+basic_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nwe")
+basic_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
-entry_market, entry_price, entry_amount, entry_rounds = entries
-entry_market.insert(0, 'USDT')
+ctk.CTkLabel(basic_frame, text="기본 설정", font=ctk.CTkFont(size=14, weight="bold"))\
+    .grid(row=0, column=0, columnspan=4, pady=(5, 10))
+
+# 코인 / 시작가
+ctk.CTkLabel(basic_frame, text="코인").grid(row=1, column=0, sticky="e", padx=5, pady=2)
+entry_market = ctk.CTkEntry(basic_frame)
+entry_market.grid(row=1, column=1, sticky="we", padx=5, pady=2)
+
+ctk.CTkLabel(basic_frame, text="시작가").grid(row=1, column=2, sticky="e", padx=5, pady=2)
+entry_price = ctk.CTkEntry(basic_frame)
+entry_price.grid(row=1, column=3, sticky="we", padx=5, pady=2)
+
+# 매수금액 / 최대차수
+ctk.CTkLabel(basic_frame, text="매수금액").grid(row=2, column=0, sticky="e", padx=5, pady=2)
+entry_amount = ctk.CTkEntry(basic_frame)
+entry_amount.grid(row=2, column=1, sticky="we", padx=5, pady=2)
+
+ctk.CTkLabel(basic_frame, text="최대차수").grid(row=2, column=2, sticky="e", padx=5, pady=2)
+entry_rounds = ctk.CTkEntry(basic_frame)
+entry_rounds.grid(row=2, column=3, sticky="we", padx=5, pady=2)
+
+# 간격 설정 프레임
+gap_frame = ctk.CTkFrame(input_frame)
+gap_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nwe")
+gap_frame.columnconfigure((0, 1, 2, 3), weight=1)
+
+ctk.CTkLabel(gap_frame, text="매매 간격 설정", font=ctk.CTkFont(size=14, weight="bold"))\
+    .grid(row=0, column=0, columnspan=4, pady=(5, 10))
 
 # 매수 간격
-buy_mode = ctk.StringVar(value="percent")
-ctk.CTkLabel(app, text="📉 매수 간격 단위").grid(row=5, column=0, padx=10, pady=6, sticky="w")
-ctk.CTkRadioButton(app, text="퍼센트", variable=buy_mode, value="percent").grid(row=5, column=1, sticky="w")
-ctk.CTkRadioButton(app, text="금액(원)", variable=buy_mode, value="price").grid(row=5, column=2, sticky="w")
-ctk.CTkLabel(app, text="매수 간격 값").grid(row=6, column=0, padx=10, pady=6, sticky="w")
-entry_buy_gap = ctk.CTkEntry(app, width=200)
-entry_buy_gap.grid(row=6, column=1, columnspan=2, padx=5, pady=6, sticky="w")
+buy_mode = ctk.StringVar(value="price")
+ctk.CTkLabel(gap_frame, text="매수 간격").grid(row=1, column=0, sticky="e", padx=5, pady=2)
+entry_buy_gap = ctk.CTkEntry(gap_frame)
+entry_buy_gap.grid(row=1, column=1, sticky="we", padx=5, pady=2)
+
+frame_buy_mode = ctk.CTkFrame(gap_frame)
+frame_buy_mode.grid(row=1, column=2, columnspan=2, sticky="w", padx=5, pady=2)
+ctk.CTkRadioButton(frame_buy_mode, text="퍼센트", variable=buy_mode, value="percent").pack(side="left", padx=4)
+ctk.CTkRadioButton(frame_buy_mode, text="금액(원)", variable=buy_mode, value="price").pack(side="left", padx=4)
 
 # 매도 간격
-sell_mode = ctk.StringVar(value="percent")
-ctk.CTkLabel(app, text="📈 매도 간격 단위").grid(row=7, column=0, padx=10, pady=6, sticky="w")
-ctk.CTkRadioButton(app, text="퍼센트", variable=sell_mode, value="percent").grid(row=7, column=1, sticky="w")
-ctk.CTkRadioButton(app, text="금액(원)", variable=sell_mode, value="price").grid(row=7, column=2, sticky="w")
-ctk.CTkLabel(app, text="매도 간격 값").grid(row=8, column=0, padx=10, pady=6, sticky="w")
-entry_sell_gap = ctk.CTkEntry(app, width=200)
-entry_sell_gap.grid(row=8, column=1, columnspan=2, padx=5, pady=6, sticky="w")
+sell_mode = ctk.StringVar(value="price")
+ctk.CTkLabel(gap_frame, text="매도 간격").grid(row=2, column=0, sticky="e", padx=5, pady=2)
+entry_sell_gap = ctk.CTkEntry(gap_frame)
+entry_sell_gap.grid(row=2, column=1, sticky="we", padx=5, pady=2)
 
-# 실행/중단 버튼
-btn_start = ctk.CTkButton(app, text="전략 실행", command=start_strategy, fg_color="#28a745")
-btn_stop = ctk.CTkButton(app, text="전략 중단", command=stop_strategy, fg_color="#dc3545")
-btn_start.grid(row=9, column=0, columnspan=3, pady=10)
-btn_stop.grid(row=10, column=0, columnspan=3, pady=5)
+frame_sell_mode = ctk.CTkFrame(gap_frame)
+frame_sell_mode.grid(row=2, column=2, columnspan=2, sticky="w", padx=5, pady=2)
+ctk.CTkRadioButton(frame_sell_mode, text="퍼센트", variable=sell_mode, value="percent").pack(side="left", padx=4)
+ctk.CTkRadioButton(frame_sell_mode, text="금액(원)", variable=sell_mode, value="price").pack(side="left", padx=4)
 
-# 로그창
-ctk.CTkLabel(app, text="실시간 로그").grid(row=11, column=0, columnspan=3)
-log_textbox = ctk.CTkTextbox(app, height=250, width=560)
-log_textbox.grid(row=12, column=0, columnspan=3, padx=10, pady=10)
 
-# 로그 리디렉션
-class TextRedirector:
-    def __init__(self, textbox):
-        self.textbox = textbox
-    def write(self, text):
-        self.textbox.insert("end", text)
-        self.textbox.see("end")
-    def flush(self): pass
 
-sys.stdout = TextRedirector(log_textbox)
+# 실행/중단 버튼 섹션
+button_frame = ctk.CTkFrame(input_frame)
+button_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="we")
 
-# 시세 쓰레드 시작
-threading.Thread(target=update_multi_prices, args=({
-    'BTC': label_btc,
-    'USDT': label_usdt,
-    'XRP': label_xrp,
-},), daemon=True).start()
+btn_start = ctk.CTkButton(button_frame, text="🚀 전략 실행", command=start_strategy, 
+                         fg_color="#28a745", hover_color="#218838", height=45, 
+                         font=ctk.CTkFont(size=14, weight="bold"))
+btn_stop = ctk.CTkButton(button_frame, text="🛑 전략 중단", command=stop_strategy, 
+                        fg_color="#dc3545", hover_color="#c82333", state="disabled", height=45,
+                        font=ctk.CTkFont(size=14, weight="bold"))
 
-app.mainloop()
+btn_start.grid(row=0, column=0, pady=10, sticky="ew", padx=5)
+btn_stop.grid(row=0, column=1, pady=10, sticky="ew", padx=5)
+
+button_frame.columnconfigure(0, weight=1)
+button_frame.columnconfigure(1, weight=1)
+input_frame.columnconfigure(0, weight=1)
+
+### 2. 전략 요약 카드 (개선된 디자인)
+summary_frame = ctk.CTkFrame(app)
+summary_frame.grid(row=1, column=0, columnspan=3, padx=20, pady=(0, 5), sticky="we")
+
+# 요약 제목
+ctk.CTkLabel(summary_frame, text="📈 전략 현황", font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, columnspan=4, pady=(10, 5))
+
+# 요약 정보를 카드 형태로 배치
+summary_labels = {}
+
+# 첫 번째 행: 코인과 시작가
+info_frame1 = ctk.CTkFrame(summary_frame)
+info_frame1.grid(row=1, column=0, columnspan=2, sticky="we", padx=10, pady=2)
+
+summary_labels["market"] = ctk.CTkLabel(info_frame1, text="코인: -", font=ctk.CTkFont(size=14, weight="bold"))
+summary_labels["market"].pack(side="left", padx=10, pady=8)
+
+summary_labels["start_price"] = ctk.CTkLabel(info_frame1, text="시작가: -", font=ctk.CTkFont(size=14))
+summary_labels["start_price"].pack(side="right", padx=10, pady=8)
+
+# 두 번째 행: 현재가와 수익률
+info_frame2 = ctk.CTkFrame(summary_frame)
+info_frame2.grid(row=2, column=0, columnspan=2, sticky="we", padx=10, pady=(2, 10))
+
+summary_labels["current_price"] = ctk.CTkLabel(info_frame2, text="현재가: -", font=ctk.CTkFont(size=14))
+summary_labels["current_price"].pack(side="left", padx=10, pady=8)
+
+summary_labels["profit"] = ctk.CTkLabel(info_frame2, text="수익액: -", font=ctk.CTkFont(size=14, weight="bold"))
+summary_labels["profit"].pack(side="right", padx=10, pady=8)
+
+summary_frame.columnconfigure(0, weight=1)
+
+### 3. 주문 상태 스크롤 카드뷰 (개선된 디자인)
+status_scroll_container = ctk.CTkScrollableFrame(app, label_text="📋 주문 상태", 
+                                               label_font=ctk.CTkFont(size=16, weight="bold"))
+status_scroll_container.grid(row=2, column=0, columnspan=3, padx=20, pady=(5, 10), sticky="nsew")
+status_scroll_container.grid_columnconfigure(0, weight=1)
+
+### 4. 전략 상태 출력 (개선된 디자인)
+status_frame = ctk.CTkFrame(app)
+status_frame.grid(row=3, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="we")
+
+label_status = ctk.CTkLabel(status_frame, text="⏳ 전략 상태: 대기 중", 
+                          font=ctk.CTkFont(size=16, weight="bold"))
+label_status.pack(pady=15)
+
+# 레이아웃 확장 설정
+app.grid_rowconfigure(2, weight=1)
+app.grid_columnconfigure(0, weight=1)
+
+# 정기 업데이트 시작
+periodic_update()
+
+if __name__ == "__main__":
+    app.mainloop()

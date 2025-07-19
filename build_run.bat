@@ -11,8 +11,8 @@ pip install -r requirements.txt
 echo [3] 빌드 시작
 python build.py
 
-echo [4] ✅ 빌드 완료: dist\\gui_app\\gui_app.exe
+echo [4] ✅ 빌드 완료: dist\AutoBitTrade\AutoBitTrade.exe
 echo [4] ▶ 실행파일 실행 중...
-start dist\\gui_app\\gui_app.exe
+start dist\AutoBitTrade\AutoBitTrade.exe
 
 pause
