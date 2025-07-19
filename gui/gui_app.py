@@ -6,6 +6,7 @@ import sys
 import customtkinter as ctk
 import threading
 import time
+from datetime import datetime
 from tkinter import messagebox
 import queue
 
@@ -13,8 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from strategy.auto_trade import run_auto_trade
 from utils.telegram import send_telegram_message
-from utils.price import get_current_price
-from api.api import cancel_all_orders
+from api.api import cancel_all_orders, get_current_price
 from shared.state import strategy_info
 
 # CustomTkinter 설정
@@ -38,9 +38,30 @@ def stop_condition():
 
 realized_profit = 0.0
 
+# 실시간 시세 표시용 변수
+price_labels = {}
+
+# 실시간 시세 업데이트 함수
+def update_price_info():
+    coins = ["BTC", "USDT", "XRP"]
+    def loop():
+        while True:
+            try:
+                now = datetime.now().strftime("%H:%M:%S")
+                price_labels["time"].configure(text=f"⏱️ {now}")
+                for coin in coins:
+                    market = f"KRW-{coin}"
+                    price = get_current_price(market)
+                    if price:
+                        price_labels[coin].configure(text=f"{coin}: {price:,.0f} KRW")
+                price_labels["time"].configure(text=f"⏱️ {now}")
+            except Exception as e:
+                print("[ERROR] price info update:", e)
+            time.sleep(3)
+    threading.Thread(target=loop, daemon=True).start()
+
 # 전략 요약 정보 업데이트 함수
 def update_strategy_summary():
-    """전략 요약 정보 업데이트"""
     try:
         current = strategy_info.get("current_price", 0)
         start = strategy_info.get("start_price", 0)
@@ -48,34 +69,12 @@ def update_strategy_summary():
 
         summary_labels["market"].configure(text=f"코인: {strategy_info['market']}")
         summary_labels["start_price"].configure(text=f"시작가: {start:,.0f} KRW")
-        summary_labels["current_price"].configure(text=f"현재가: {current:,.0f} KRW")
-        
-        color = "green" if profit >= 0 else "red"
         summary_labels["profit"].configure(
             text=f"수익액: {profit:,.0f} KRW",
-            text_color=color
+            text_color="green" if profit >= 0 else "red"
         )
     except Exception as e:
         print(f"[ERROR] update_strategy_summary: {e}")
-
-# 현재가 업데이트 함수
-def update_current_price():
-    """현재가 업데이트 (별도 스레드)"""
-    def price_update_loop():
-        while True:  # running_flag 대신 무조건 루프
-            try:
-                if strategy_info["market"] != "-":
-                    market_code = f"KRW-{strategy_info['market']}"
-                    price = get_current_price(market_code)
-                    if price and price > 0:
-                        strategy_info["current_price"] = price
-                        app.after(0, update_strategy_summary)
-                time.sleep(3)
-            except Exception as e:
-                print(f"[ERROR] price_update_loop: {e}")
-                time.sleep(5)
-
-    threading.Thread(target=price_update_loop, daemon=True).start()
 
 def update_order_status(level, text):
     """주문 상태 업데이트 - 메인 스레드에서 안전하게 실행"""
@@ -151,7 +150,6 @@ def process_status_updates():
 
 def start_strategy():
     """전략 시작"""
-    threading.Thread(target=update_current_price_loop, daemon=True).start()
     global stop_flag, running_flag
     
     if running_flag:
@@ -200,9 +198,6 @@ def start_strategy():
             
             # UI 업데이트
             app.after(0, update_strategy_summary)
-            
-            # 현재가 업데이트 시작
-            update_current_price()
             
             # 주문 상태 카드 초기화
             app.after(0, lambda: initialize_order_cards(max_levels))
@@ -324,20 +319,19 @@ def periodic_update():
         print(f"[ERROR] periodic_update: {e}")
     finally:
         app.after(100, periodic_update)  # 100ms마다 실행
-
-# 현재가 실시간 갱신 루프
-def update_current_price_loop():
-    while running_flag:
-        try:
-            current_price = get_current_price(strategy_info['market'])
-            strategy_info['current_price'] = current_price
-            update_strategy_summary()
-        except Exception as e:
-            print(f"[ERROR] 가격 갱신 실패: {e}")
-        time.sleep(3)
         
 # UI 구성
-### 1. 입력 UI 프레임 (개선된 디자인)
+### 실시간 시세 정보 표사
+price_frame = ctk.CTkFrame(app)
+price_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nwe")
+price_labels["time"] = ctk.CTkLabel(price_frame, text="⏱️ --:--:--", font=ctk.CTkFont(size=13))
+price_labels["time"].pack(anchor="w", padx=10, pady=(5, 0))
+
+for coin in ["BTC", "USDT", "XRP"]:
+    price_labels[coin] = ctk.CTkLabel(price_frame, text=f"{coin}: -", font=ctk.CTkFont(size=13))
+    price_labels[coin].pack(anchor="w", padx=10)
+
+### 입력 UI 프레임
 # 입력 프레임 전체 가운데 정렬 및 확장 가능 설정
 input_frame = ctk.CTkFrame(app)
 input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nwe")
@@ -399,8 +393,6 @@ frame_sell_mode.grid(row=2, column=2, columnspan=2, sticky="w", padx=5, pady=2)
 ctk.CTkRadioButton(frame_sell_mode, text="퍼센트", variable=sell_mode, value="percent").pack(side="left", padx=4)
 ctk.CTkRadioButton(frame_sell_mode, text="금액(원)", variable=sell_mode, value="price").pack(side="left", padx=4)
 
-
-
 # 실행/중단 버튼 섹션
 button_frame = ctk.CTkFrame(input_frame)
 button_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="we")
@@ -419,45 +411,46 @@ button_frame.columnconfigure(0, weight=1)
 button_frame.columnconfigure(1, weight=1)
 input_frame.columnconfigure(0, weight=1)
 
-### 2. 전략 요약 카드 (개선된 디자인)
+### 2. 전략 현황 카드
+# 코인, 시작가, 수익액 3행으로 구성
 summary_frame = ctk.CTkFrame(app)
-summary_frame.grid(row=1, column=0, columnspan=3, padx=20, pady=(0, 5), sticky="we")
+summary_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nwe")
+summary_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
 
-# 요약 제목
+# 전략 현황 정보 라벨
 ctk.CTkLabel(summary_frame, text="📈 전략 현황", font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, columnspan=4, pady=(10, 5))
 
-# 요약 정보를 카드 형태로 배치
+# 전략 현황 정보를 카드 형태로 배치
 summary_labels = {}
 
-# 첫 번째 행: 코인과 시작가
+# 첫 번째 행: 코인
 info_frame1 = ctk.CTkFrame(summary_frame)
 info_frame1.grid(row=1, column=0, columnspan=2, sticky="we", padx=10, pady=2)
 
 summary_labels["market"] = ctk.CTkLabel(info_frame1, text="코인: -", font=ctk.CTkFont(size=14, weight="bold"))
 summary_labels["market"].pack(side="left", padx=10, pady=8)
 
-summary_labels["start_price"] = ctk.CTkLabel(info_frame1, text="시작가: -", font=ctk.CTkFont(size=14))
-summary_labels["start_price"].pack(side="right", padx=10, pady=8)
-
-# 두 번째 행: 현재가와 수익률
+# 두 번째 행: 시작가
 info_frame2 = ctk.CTkFrame(summary_frame)
-info_frame2.grid(row=2, column=0, columnspan=2, sticky="we", padx=10, pady=(2, 10))
+info_frame2.grid(row=2, column=0, columnspan=2, sticky="we", padx=10, pady=2)
 
-summary_labels["current_price"] = ctk.CTkLabel(info_frame2, text="현재가: -", font=ctk.CTkFont(size=14))
-summary_labels["current_price"].pack(side="left", padx=10, pady=8)
+summary_labels["start_price"] = ctk.CTkLabel(info_frame2, text="시작가: -", font=ctk.CTkFont(size=14))
+summary_labels["start_price"].pack(side="left", padx=10, pady=8)
 
-summary_labels["profit"] = ctk.CTkLabel(info_frame2, text="수익액: -", font=ctk.CTkFont(size=14, weight="bold"))
-summary_labels["profit"].pack(side="right", padx=10, pady=8)
+# 세 번째 행: 수익액
+info_frame3 = ctk.CTkFrame(summary_frame)
+info_frame3.grid(row=3, column=0, columnspan=2, sticky="we", padx=10, pady=2)
 
-summary_frame.columnconfigure(0, weight=1)
+summary_labels["profit"] = ctk.CTkLabel(info_frame3, text="수익액: -", font=ctk.CTkFont(size=14, weight="bold"))
+summary_labels["profit"].pack(side="left", padx=10, pady=8)
 
-### 3. 주문 상태 스크롤 카드뷰 (개선된 디자인)
+### 3. 주문 상태 스크롤 카드뷰
 status_scroll_container = ctk.CTkScrollableFrame(app, label_text="📋 주문 상태", 
                                                label_font=ctk.CTkFont(size=16, weight="bold"))
 status_scroll_container.grid(row=2, column=0, columnspan=3, padx=20, pady=(5, 10), sticky="nsew")
 status_scroll_container.grid_columnconfigure(0, weight=1)
 
-### 4. 전략 상태 출력 (개선된 디자인)
+### 4. 전략 상태 출력
 status_frame = ctk.CTkFrame(app)
 status_frame.grid(row=3, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="we")
 
@@ -471,6 +464,9 @@ app.grid_columnconfigure(0, weight=1)
 
 # 정기 업데이트 시작
 periodic_update()
+
+# 실시간 시세 정보 업데이트 시작
+update_price_info()
 
 if __name__ == "__main__":
     app.mainloop()

@@ -96,7 +96,7 @@ def run_auto_trade(start_price, krw_amount, max_levels,
         levels.append(GridLevel(i + 1, buy_price, sell_price, volume))
 
     print(f"📊 자동 매매 시작: {max_levels}차까지 설정됨.")
-    send_telegram_message(f"🚀 자동매매 시작: 최대 {max_levels}차, 시작가 {start_price}원")
+    send_telegram_message(f"🚀 자동매매 시작\n코인: {market}\n차수: {max_levels}차\n시작가: {start_price}원\n매수 금액: {krw_amount}원")
 
     place_buy(levels[0], market)
 
