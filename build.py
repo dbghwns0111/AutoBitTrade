@@ -17,7 +17,6 @@ a = Analysis(
         ('config/tick_table.py', 'config'),
         ('api/api.py', 'api'),
         ('utils/telegram.py', 'utils'),
-        ('utils/price.py', 'utils'),
     ],
     hiddenimports=[],
     hookspath=[],

@@ -133,3 +133,14 @@ def get_current_price(market='KRW-BTC'):
     else:
         print(f"❌ 현재가 조회 실패: {data['message']}")
         return None
+    
+# 주문 취소 함수
+# - 매수 체결 시: (n-1)차 매도 주문 취소 추가
+# - 매도 체결 시: (n+1)차 매수 주문 취소 + (n-1)차 매도 주문 재등록
+def cancel_order_by_uuid(uuid):
+    if uuid:
+        res = cancel_order(uuid)
+        if res.get('uuid') or res.get('data', {}).get('uuid'):
+            print(f"🚫 주문 취소 성공: {uuid}")
+        else:
+            print(f"⚠️ 주문 취소 실패: {res}")
