@@ -69,10 +69,7 @@ def update_strategy_summary():
 
         summary_labels["market"].configure(text=f"코인: {strategy_info['market']}")
         summary_labels["start_price"].configure(text=f"시작가: {start:,.0f} KRW")
-        summary_labels["profit"].configure(
-            text=f"수익액: {profit:,.0f} KRW",
-            text_color="green" if profit >= 0 else "red"
-        )
+        summary_labels["profit"].configure(text=f"수익액: {profit:,.0f} KRW", text_color="green" if profit >= 0 else "red")
     except Exception as e:
         print(f"[ERROR] update_strategy_summary: {e}")
 
@@ -334,7 +331,7 @@ for coin in ["BTC", "USDT", "XRP"]:
 ### 입력 UI 프레임
 # 입력 프레임 전체 가운데 정렬 및 확장 가능 설정
 input_frame = ctk.CTkFrame(app)
-input_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nwe")
+input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nwe")
 input_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
 
 # 기본 설정 프레임
@@ -414,7 +411,7 @@ input_frame.columnconfigure(0, weight=1)
 ### 2. 전략 현황 카드
 # 코인, 시작가, 수익액 3행으로 구성
 summary_frame = ctk.CTkFrame(app)
-summary_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nwe")
+summary_frame.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="nwe")
 summary_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
 
 # 전략 현황 정보 라벨
@@ -447,12 +444,12 @@ summary_labels["profit"].pack(side="left", padx=10, pady=8)
 ### 3. 주문 상태 스크롤 카드뷰
 status_scroll_container = ctk.CTkScrollableFrame(app, label_text="📋 주문 상태", 
                                                label_font=ctk.CTkFont(size=16, weight="bold"))
-status_scroll_container.grid(row=2, column=0, columnspan=3, padx=20, pady=(5, 10), sticky="nsew")
+status_scroll_container.grid(row=3, column=0, columnspan=3, padx=20, pady=(5, 10), sticky="nsew")
 status_scroll_container.grid_columnconfigure(0, weight=1)
 
 ### 4. 전략 상태 출력
 status_frame = ctk.CTkFrame(app)
-status_frame.grid(row=3, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="we")
+status_frame.grid(row=4, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="we")
 
 label_status = ctk.CTkLabel(status_frame, text="⏳ 전략 상태: 대기 중", 
                           font=ctk.CTkFont(size=16, weight="bold"))

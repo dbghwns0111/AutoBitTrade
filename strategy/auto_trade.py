@@ -73,6 +73,9 @@ def run_auto_trade(start_price, krw_amount, max_levels,
     realized_profit = 0.0
     strategy_info["realized_profit"] = realized_profit
 
+    # 콜백 중복 방지용 플래그
+    callback_flags = {'buy': set(), 'sell': set()}
+
     # 차수별 그리드 레벨 생성
     levels = []
     for i in range(max_levels):
@@ -102,8 +105,14 @@ def run_auto_trade(start_price, krw_amount, max_levels,
                 remaining = float(data.get('remaining_volume', 0))
                 if executed > 0 and remaining == 0:
                     level.buy_filled = True
+                    callback_flags['buy'].add(level.level)
+
                     print(f"✅ [{level.level}차] 매수 체결 완료: {level.buy_price}원")
                     send_telegram_message(f"✅ {level.level}차 매수 체결 / {level.buy_price}원 / {level.volume}개")
+
+                    # 콜백 함수 호출
+                    if status_callback:
+                        status_callback(level.level, f"[{level.level}차] 매수 체결 ✅ / 매도 대기")
 
                     # ✅ 모든 기존 주문 취소
                     for lv in levels:
@@ -130,11 +139,29 @@ def run_auto_trade(start_price, krw_amount, max_levels,
                 remaining = float(data.get('remaining_volume', 0))
                 if executed > 0 and remaining == 0:
                     level.sell_filled = True
+                    callback_flags['sell'].add(level.level)
+
                     profit = (level.sell_price - level.buy_price) * level.volume
                     realized_profit += profit
                     strategy_info["realized_profit"] = realized_profit
                     print(f"💰 [{level.level}차] 매도 체결 완료: {level.sell_price}원 / 수익 {profit:.0f}원")
                     send_telegram_message(f"💰 {level.level}차 매도 체결: {level.sell_price}원 / 수익 <b>{profit:.0f}</b>원")
+
+                    # level 상태 초기화
+                    level.buy_uuid = None
+                    level.buy_filled = False
+                    level.sell_uuid = None
+                    level.sell_filled = False
+
+                    # 선택적으로 callback_flags도 초기화
+                    callback_flags['buy'].discard(level.level)
+                    callback_flags['sell'].discard(level.level)
+
+                    # 콜백 함수 호출
+                    if status_callback:
+                        status_callback(level.level, f"[{level.level}차] 매도 체결 ✅ / 수익 {profit:.0f}원")
+                    if summary_callback:
+                        summary_callback()
 
                     # ✅ 모든 기존 주문 취소
                     for lv in levels:
