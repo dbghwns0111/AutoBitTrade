@@ -33,7 +33,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False
+    console=False,
+    icon="images/AutoBitTrade-icon.png"
 )
 
 coll = COLLECT(

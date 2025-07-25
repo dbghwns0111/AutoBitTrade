@@ -7,7 +7,7 @@ import math
 from datetime import datetime
 from api.api import place_order, get_order_detail, cancel_order_by_uuid
 from config.tick_table import TICK_SIZE
-from utils.telegram import send_telegram_message
+from utils.telegram import send_telegram_message, MSG_AUTO_TRADE_START, MSG_BUY_ORDER, MSG_SELL_ORDER, MSG_BUY_FILLED, MSG_SELL_FILLED
 from shared.state import strategy_info
 
 # 가격 계산 함수: 퍼센트 또는 고정 금액으로 가격 조정
@@ -28,7 +28,7 @@ def place_buy(level, market):
     if uuid:
         level.buy_uuid = uuid
         print(f"🛒 [{level.level}차] 매수 주문 등록: {level.buy_price}원 / {level.volume}개")
-        send_telegram_message(f"🛒 <b>{market}</b> {level.level}차 매수 주문 등록\n📉 {level.buy_price}원 / 📦 {level.volume}개")
+        send_telegram_message(MSG_BUY_ORDER.format(market=market, level=level.level, buy_price=level.buy_price, volume=level.volume))
     else:
         print(f"❌ 매수 주문 실패 [{level.level}차]: {res}")
 
@@ -38,7 +38,7 @@ def place_sell(level, market):
     if uuid:
         level.sell_uuid = uuid
         print(f"📤 [{level.level}차] 매도 주문 등록: {level.sell_price}원 / {level.volume}개")
-        send_telegram_message(f"📤 <b>{market}</b> {level.level}차 매도 주문 등록\n📈 {level.sell_price}원 / {level.volume}개")
+        send_telegram_message(MSG_SELL_ORDER.format(market=market, level=level.level, sell_price=level.sell_price, volume=level.volume))
     else:
         print(f"❌ 매도 주문 실패 [{level.level}차]: {res}")
 
@@ -87,7 +87,7 @@ def run_auto_trade(start_price, krw_amount, max_levels,
         levels.append(GridLevel(i + 1, buy_price, sell_price, volume))
 
     print(f"📊 자동 매매 시작: {max_levels}차까지 설정됨.")
-    send_telegram_message(f"🚀 자동매매 시작\n코인: {market}\n차수: {max_levels}차\n시작가: {start_price}원\n매수 금액: {krw_amount}원")
+    send_telegram_message(MSG_AUTO_TRADE_START.format(market=market, max_levels=max_levels, start_price=start_price, krw_amount=krw_amount))
 
     place_buy(levels[0], market)
 
@@ -108,7 +108,7 @@ def run_auto_trade(start_price, krw_amount, max_levels,
                     callback_flags['buy'].add(level.level)
 
                     print(f"✅ [{level.level}차] 매수 체결 완료: {level.buy_price}원")
-                    send_telegram_message(f"✅ {level.level}차 매수 체결 / {level.buy_price}원 / {level.volume}개")
+                    send_telegram_message(MSG_BUY_FILLED.format(market=market, level=level.level, buy_price=level.buy_price, volume=level.volume))
 
                     # 콜백 함수 호출
                     if status_callback:
@@ -145,7 +145,7 @@ def run_auto_trade(start_price, krw_amount, max_levels,
                     realized_profit += profit
                     strategy_info["realized_profit"] = realized_profit
                     print(f"💰 [{level.level}차] 매도 체결 완료: {level.sell_price}원 / 수익 {profit:.0f}원")
-                    send_telegram_message(f"💰 {level.level}차 매도 체결: {level.sell_price}원 / 수익 <b>{profit:.0f}</b>원")
+                    send_telegram_message(MSG_SELL_FILLED.format(market=market, level=level.level, sell_price=level.sell_price, volume=level.volume, profit=profit, realized_profit=realized_profit))
 
                     # level 상태 초기화
                     level.buy_uuid = None

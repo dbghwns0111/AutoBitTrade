@@ -41,24 +41,76 @@ realized_profit = 0.0
 # 실시간 시세 표시용 변수
 price_labels = {}
 
+# 전략 정보 저장용 변수
+def get_current_price_temp(coin):
+    """임시 현재가 조회 함수 - 업비트 API 사용"""
+    try:
+        import requests
+        market = f"KRW-{coin}"
+        url = "https://api.upbit.com/v1/ticker"
+        params = {"markets": market}
+        
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+        
+        if data and len(data) > 0:
+            return float(data[0]['trade_price'])
+        return None
+        
+    except Exception as e:
+        print(f"❌ {coin} 가격 조회 실패: {e}")
+        return None
+
 # 실시간 시세 업데이트 함수
 def update_price_info():
-    coins = ["BTC", "USDT", "XRP"]
+    """실시간 시세 업데이트 함수 - 수정된 버전"""
     def loop():
         while True:
             try:
+                # 현재 시간 업데이트
                 now = datetime.now().strftime("%H:%M:%S")
-                price_labels["time"].configure(text=f"⏱️ {now}")
+                
+                # 메인 스레드에서 안전하게 시간 업데이트
+                def update_time():
+                    if "time" in price_labels:
+                        price_labels["time"].configure(text=f"⏱️ {now}")
+                
+                app.after(0, update_time)
+                
+                # 코인 가격 업데이트
+                coins = ["BTC", "USDT", "XRP"]
                 for coin in coins:
-                    market = f"KRW-{coin}"
-                    price = get_current_price(market)
-                    if price:
-                        price_labels[coin].configure(text=f"{coin}: {price:,.0f} KRW")
-                price_labels["time"].configure(text=f"⏱️ {now}")
+                    try:
+                        price = get_current_price_temp(coin)  # 임시 함수 사용
+                        
+                        def update_coin_price(c=coin, p=price):
+                            if c in price_labels:
+                                if p:
+                                    price_labels[c].configure(text=f"{c}: {p:,.0f} KRW")
+                                else:
+                                    price_labels[c].configure(text=f"{c}: 조회 실패")
+                        
+                        app.after(0, update_coin_price)
+                        
+                    except Exception as e:
+                        print(f"[ERROR] {coin} 가격 조회 중 오류: {e}")
+                        
+                        def update_error(c=coin):
+                            if c in price_labels:
+                                price_labels[c].configure(text=f"{c}: 오류")
+                        
+                        app.after(0, update_error)
+                
             except Exception as e:
-                print("[ERROR] price info update:", e)
+                print(f"[ERROR] 전체 가격 업데이트 오류: {e}")
+
+            # 3초 대기
             time.sleep(3)
-    threading.Thread(target=loop, daemon=True).start()
+    
+    # 데몬 스레드로 시작
+    thread = threading.Thread(target=loop, daemon=True)
+    thread.start()
+    print("[INFO] 실시간 가격 업데이트 스레드 시작됨")
 
 # 전략 요약 정보 업데이트 함수
 def update_strategy_summary():
@@ -318,9 +370,11 @@ def periodic_update():
         app.after(100, periodic_update)  # 100ms마다 실행
         
 # UI 구성
-### 실시간 시세 정보 표사
+### 실시간 시세 정보 표시
 price_frame = ctk.CTkFrame(app)
-price_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="nwe")
+price_frame.grid(row=0, column=0, padx=10, pady=(10, 0), sticky="ew")
+price_frame.columnconfigure(0, weight=1)  # 수평 확장 설정
+
 price_labels["time"] = ctk.CTkLabel(price_frame, text="⏱️ --:--:--", font=ctk.CTkFont(size=13))
 price_labels["time"].pack(anchor="w", padx=10, pady=(5, 0))
 
@@ -329,14 +383,13 @@ for coin in ["BTC", "USDT", "XRP"]:
     price_labels[coin].pack(anchor="w", padx=10)
 
 ### 입력 UI 프레임
-# 입력 프레임 전체 가운데 정렬 및 확장 가능 설정
 input_frame = ctk.CTkFrame(app)
-input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nwe")
-input_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
+input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+input_frame.columnconfigure(0, weight=1)
 
 # 기본 설정 프레임
 basic_frame = ctk.CTkFrame(input_frame)
-basic_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nwe")
+basic_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 basic_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
 ctk.CTkLabel(basic_frame, text="기본 설정", font=ctk.CTkFont(size=14, weight="bold"))\
@@ -345,24 +398,24 @@ ctk.CTkLabel(basic_frame, text="기본 설정", font=ctk.CTkFont(size=14, weight
 # 코인 / 시작가
 ctk.CTkLabel(basic_frame, text="코인").grid(row=1, column=0, sticky="e", padx=5, pady=2)
 entry_market = ctk.CTkEntry(basic_frame)
-entry_market.grid(row=1, column=1, sticky="we", padx=5, pady=2)
+entry_market.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
 ctk.CTkLabel(basic_frame, text="시작가").grid(row=1, column=2, sticky="e", padx=5, pady=2)
 entry_price = ctk.CTkEntry(basic_frame)
-entry_price.grid(row=1, column=3, sticky="we", padx=5, pady=2)
+entry_price.grid(row=1, column=3, sticky="ew", padx=5, pady=2)
 
 # 매수금액 / 최대차수
 ctk.CTkLabel(basic_frame, text="매수금액").grid(row=2, column=0, sticky="e", padx=5, pady=2)
 entry_amount = ctk.CTkEntry(basic_frame)
-entry_amount.grid(row=2, column=1, sticky="we", padx=5, pady=2)
+entry_amount.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
 
 ctk.CTkLabel(basic_frame, text="최대차수").grid(row=2, column=2, sticky="e", padx=5, pady=2)
 entry_rounds = ctk.CTkEntry(basic_frame)
-entry_rounds.grid(row=2, column=3, sticky="we", padx=5, pady=2)
+entry_rounds.grid(row=2, column=3, sticky="ew", padx=5, pady=2)
 
 # 간격 설정 프레임
 gap_frame = ctk.CTkFrame(input_frame)
-gap_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="nwe")
+gap_frame.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
 gap_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
 ctk.CTkLabel(gap_frame, text="매매 간격 설정", font=ctk.CTkFont(size=14, weight="bold"))\
@@ -372,10 +425,10 @@ ctk.CTkLabel(gap_frame, text="매매 간격 설정", font=ctk.CTkFont(size=14, w
 buy_mode = ctk.StringVar(value="price")
 ctk.CTkLabel(gap_frame, text="매수 간격").grid(row=1, column=0, sticky="e", padx=5, pady=2)
 entry_buy_gap = ctk.CTkEntry(gap_frame)
-entry_buy_gap.grid(row=1, column=1, sticky="we", padx=5, pady=2)
+entry_buy_gap.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
 
 frame_buy_mode = ctk.CTkFrame(gap_frame)
-frame_buy_mode.grid(row=1, column=2, columnspan=2, sticky="w", padx=5, pady=2)
+frame_buy_mode.grid(row=1, column=2, columnspan=2, sticky="ew", padx=5, pady=2)
 ctk.CTkRadioButton(frame_buy_mode, text="퍼센트", variable=buy_mode, value="percent").pack(side="left", padx=4)
 ctk.CTkRadioButton(frame_buy_mode, text="금액(원)", variable=buy_mode, value="price").pack(side="left", padx=4)
 
@@ -383,16 +436,17 @@ ctk.CTkRadioButton(frame_buy_mode, text="금액(원)", variable=buy_mode, value=
 sell_mode = ctk.StringVar(value="price")
 ctk.CTkLabel(gap_frame, text="매도 간격").grid(row=2, column=0, sticky="e", padx=5, pady=2)
 entry_sell_gap = ctk.CTkEntry(gap_frame)
-entry_sell_gap.grid(row=2, column=1, sticky="we", padx=5, pady=2)
+entry_sell_gap.grid(row=2, column=1, sticky="ew", padx=5, pady=2)
 
 frame_sell_mode = ctk.CTkFrame(gap_frame)
-frame_sell_mode.grid(row=2, column=2, columnspan=2, sticky="w", padx=5, pady=2)
+frame_sell_mode.grid(row=2, column=2, columnspan=2, sticky="ew", padx=5, pady=2)
 ctk.CTkRadioButton(frame_sell_mode, text="퍼센트", variable=sell_mode, value="percent").pack(side="left", padx=4)
 ctk.CTkRadioButton(frame_sell_mode, text="금액(원)", variable=sell_mode, value="price").pack(side="left", padx=4)
 
 # 실행/중단 버튼 섹션
 button_frame = ctk.CTkFrame(input_frame)
-button_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=(0, 10), sticky="we")
+button_frame.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="ew")
+button_frame.columnconfigure((0, 1), weight=1)
 
 btn_start = ctk.CTkButton(button_frame, text="🚀 전략 실행", command=start_strategy, 
                          fg_color="#28a745", hover_color="#218838", height=45, 
@@ -401,42 +455,38 @@ btn_stop = ctk.CTkButton(button_frame, text="🛑 전략 중단", command=stop_s
                         fg_color="#dc3545", hover_color="#c82333", state="disabled", height=45,
                         font=ctk.CTkFont(size=14, weight="bold"))
 
-btn_start.grid(row=0, column=0, pady=10, sticky="ew", padx=5)
-btn_stop.grid(row=0, column=1, pady=10, sticky="ew", padx=5)
-
-button_frame.columnconfigure(0, weight=1)
-button_frame.columnconfigure(1, weight=1)
-input_frame.columnconfigure(0, weight=1)
+btn_start.grid(row=0, column=0, pady=10, sticky="ew", padx=(10, 5))
+btn_stop.grid(row=0, column=1, pady=10, sticky="ew", padx=(5, 10))
 
 ### 2. 전략 현황 카드
-# 코인, 시작가, 수익액 3행으로 구성
 summary_frame = ctk.CTkFrame(app)
-summary_frame.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="nwe")
-summary_frame.columnconfigure(0, weight=1)  # 수평 확장 가능하게 설정
+summary_frame.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="ew")
+summary_frame.columnconfigure(0, weight=1)
 
 # 전략 현황 정보 라벨
-ctk.CTkLabel(summary_frame, text="📈 전략 현황", font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, columnspan=4, pady=(10, 5))
+ctk.CTkLabel(summary_frame, text="📈 전략 현황", font=ctk.CTkFont(size=16, weight="bold"))\
+    .grid(row=0, column=0, pady=(10, 5))
 
 # 전략 현황 정보를 카드 형태로 배치
 summary_labels = {}
 
 # 첫 번째 행: 코인
 info_frame1 = ctk.CTkFrame(summary_frame)
-info_frame1.grid(row=1, column=0, columnspan=2, sticky="we", padx=10, pady=2)
+info_frame1.grid(row=1, column=0, sticky="ew", padx=10, pady=2)
 
 summary_labels["market"] = ctk.CTkLabel(info_frame1, text="코인: -", font=ctk.CTkFont(size=14, weight="bold"))
 summary_labels["market"].pack(side="left", padx=10, pady=8)
 
 # 두 번째 행: 시작가
 info_frame2 = ctk.CTkFrame(summary_frame)
-info_frame2.grid(row=2, column=0, columnspan=2, sticky="we", padx=10, pady=2)
+info_frame2.grid(row=2, column=0, sticky="ew", padx=10, pady=2)
 
 summary_labels["start_price"] = ctk.CTkLabel(info_frame2, text="시작가: -", font=ctk.CTkFont(size=14))
 summary_labels["start_price"].pack(side="left", padx=10, pady=8)
 
 # 세 번째 행: 수익액
 info_frame3 = ctk.CTkFrame(summary_frame)
-info_frame3.grid(row=3, column=0, columnspan=2, sticky="we", padx=10, pady=2)
+info_frame3.grid(row=3, column=0, sticky="ew", padx=10, pady=2)
 
 summary_labels["profit"] = ctk.CTkLabel(info_frame3, text="수익액: -", font=ctk.CTkFont(size=14, weight="bold"))
 summary_labels["profit"].pack(side="left", padx=10, pady=8)
@@ -444,19 +494,19 @@ summary_labels["profit"].pack(side="left", padx=10, pady=8)
 ### 3. 주문 상태 스크롤 카드뷰
 status_scroll_container = ctk.CTkScrollableFrame(app, label_text="📋 주문 상태", 
                                                label_font=ctk.CTkFont(size=16, weight="bold"))
-status_scroll_container.grid(row=3, column=0, columnspan=3, padx=20, pady=(5, 10), sticky="nsew")
+status_scroll_container.grid(row=3, column=0, padx=10, pady=(5, 10), sticky="nsew")
 status_scroll_container.grid_columnconfigure(0, weight=1)
 
 ### 4. 전략 상태 출력
 status_frame = ctk.CTkFrame(app)
-status_frame.grid(row=4, column=0, columnspan=3, padx=20, pady=(0, 10), sticky="we")
+status_frame.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="ew")
 
 label_status = ctk.CTkLabel(status_frame, text="⏳ 전략 상태: 대기 중", 
                           font=ctk.CTkFont(size=16, weight="bold"))
 label_status.pack(pady=15)
 
-# 레이아웃 확장 설정
-app.grid_rowconfigure(2, weight=1)
+# 메인 윈도우 레이아웃 확장 설정
+app.grid_rowconfigure(3, weight=1)  # 스크롤 영역이 확장되도록
 app.grid_columnconfigure(0, weight=1)
 
 # 정기 업데이트 시작

@@ -33,3 +33,39 @@ def send_telegram_message(message):
             print(f"❌ 텔레그램 전송 실패: {response.text}")
     except Exception as e:
         print(f"🚫 텔레그램 요청 중 오류 발생: {e}")
+
+# 텔레그램 메시지 템플릿 모음
+
+MSG_AUTO_TRADE_START = (
+    "🚀 <b>[자동매매 시작]</b>\n"
+    "📍코인: <b>{market}</b>\n"
+    "🔢 차수: <b>{max_levels}차</b>\n"
+    "💵 시작가: {start_price:,}원\n"
+    "💰 매수금액: {krw_amount:,}원"
+)
+
+MSG_BUY_ORDER = (
+    "🛒 <b>{market}</b> | <b>{level}차 매수 주문 등록</b>\n"
+    "📉 매수가: {buy_price:,}원\n"
+    "📦 수량: {volume:.8f}"
+)
+
+MSG_SELL_ORDER = (
+    "📤 <b>{market}</b> | <b>{level}차 매도 주문 등록</b>\n"
+    "📈 매도가: {sell_price:,}원\n"
+    "📦 수량: {volume:.8f}"
+)
+
+MSG_BUY_FILLED = (
+    "✅ <b>{market}</b> | <b>{level}차 매수 체결</b>\n"
+    "📉 매수가: {buy_price:,}원\n"
+    "📦 수량: {volume:.8f}"
+)
+
+MSG_SELL_FILLED = (
+    "☑️ <b>{market}</b> | <b>{level}차 매도 체결</b>\n"
+    "📈 매도가: {sell_price:,}원\n"
+    "📦 수량: {volume:.8f}\n"
+    "📊 수익: <b>{profit:,.0f}원</b>\n"
+    "💼 누적 수익: <b>{realized_profit:,.0f}원</b>"
+)
